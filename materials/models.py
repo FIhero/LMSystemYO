@@ -1,5 +1,4 @@
 from django.db import models
-from rest_framework import serializers
 
 from config import settings
 
@@ -97,3 +96,21 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Платеж {self.amount} от {self.user}"
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь"
+    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Курс")
+    subscribed_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата подписки"
+    )
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        unique_together = ["user", "course"]
+
+    def __str__(self):
+        return f"{self.user} подписан на {self.course}"

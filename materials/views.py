@@ -1,7 +1,10 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from .models import Course, Lesson, Payment
+from .models import Course, Lesson, Payment, Subscription
+from .paginators import CoursePaginator, LessonPaginator
 from .permissions import IsModerator, IsOwner
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
@@ -9,6 +12,7 @@ from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    pagination_class = CoursePaginator
 
     def get_permissions(self):
         """Разные permissions для разных действий"""
@@ -26,10 +30,32 @@ class CourseViewSet(viewsets.ModelViewSet):
         """При создании назначаем владельца"""
         serializer.save(owner=self.request.user)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
+    @action(detail=True, methods=["post"])
+    def subscribe(self, request, pk=None):
+        course = self.get_object()
+        subscription, created = Subscription.objects.get_or_create(
+            user=request.user, course=course
+        )
+        if created:
+            return Response({"status": "subscribed"})
+        return Response({"status": "already subscribed"})
+
+    @action(detail=True, methods=["post"])
+    def unsubscribe(self, request, pk=None):
+        course = self.get_object()
+        Subscription.objects.filter(user=request.user, course=course).delete()
+        return Response({"status": "unsubscribed"})
+
 
 class LessonListAPIView(generics.ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LessonPaginator
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
