@@ -1,7 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from services.stripe_service import StripeService
 
 from .models import Course, Lesson, Payment, Subscription
 from .paginators import CoursePaginator, LessonPaginator
@@ -101,3 +103,40 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return queryset.order_by("-payment_date")
 
         return queryset
+
+    @action(detail=False, methods=['post'])
+    def buy_course(self, request):
+        course_id = request.data.get('course_id')
+        amount = request.data.get('amount', 1000)
+
+        try:
+            course = Course.objects.get(id=course_id)
+            product = StripeService.create_product(f"Course: {course.title}")
+            price = StripeService.create_price(amount, product.id)
+            session = StripeService.create_checkout_session(price.id, course_id)
+
+            Payment.objects.create(
+                user=request.user,
+                paid_course=course,
+                amount=amount,
+                payment_method='transfer',
+                stripe_session_id=session.id
+            )
+
+            return Response({
+                'session_id': session.id,
+                'url': session.url
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=False, methods=['get'])
+    def payment_status(self, request):
+        """Проверяет статус платежа"""
+        session_id = request.query_params.get('session_id')
+
+        try:
+            status = StripeService.get_session_status(session_id)
+            return Response({'status': status})
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
