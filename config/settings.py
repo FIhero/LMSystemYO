@@ -48,13 +48,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "rest_framework_simplejwt",
-    'drf_yasg',
+    "drf_yasg",
     "users",
     "materials",
 ]
 
 SWAGGER_SETTINGS = {
-    'DEFAULT_INFO': 'config.urls.api_info',
+    "DEFAULT_INFO": "config.urls.api_info",
 }
 
 REST_FRAMEWORK = {
@@ -166,5 +166,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "users.User"
 
-STRIPE_PUBLIC_KEY = 'pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF'
+STRIPE_PUBLIC_KEY = (
+    "pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
