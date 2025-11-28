@@ -1,4 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -104,6 +106,36 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @swagger_auto_schema(
+        operation_description="Создание сессии оплаты курса",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["course_id"],
+            properties={
+                "course_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="ID курса"
+                ),
+                "amount": openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description="Сумма в рублях",
+                    default=1000,
+                ),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                "Success",
+                openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "session_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "url": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            400: "Bad Request",
+        },
+    )
     @action(detail=False, methods=["post"])
     def buy_course(self, request):
         course_id = request.data.get("course_id")
