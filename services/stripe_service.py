@@ -1,18 +1,17 @@
 import stripe
 from django.conf import settings
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class StripeService:
     @staticmethod
     def create_product(name: str):
         """Создает продукт в Stripe"""
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         return stripe.Product.create(name=name)
 
     @staticmethod
     def create_price(amount: int, product_id: str):
         """Создает цену в Stripe (amount в рублях)"""
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         return stripe.Price.create(
             unit_amount=amount * 100,
             currency="rub",
@@ -22,7 +21,6 @@ class StripeService:
     @staticmethod
     def create_checkout_session(price_id: str, course_id: int):
         """Создает сессию оплаты"""
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         return stripe.checkout.Session.create(
             line_items=[
                 {
