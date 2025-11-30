@@ -14,6 +14,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -37,6 +38,16 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379")
+CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "block-inactive-users-monthly": {
+        "task": "users.tasks.block_inactive_users",
+        "schedule": crontab(day_of_month="1", hour=3, minute=0),
+    },
+}
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -49,6 +60,7 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework_simplejwt",
     "drf_yasg",
+    "django_celery_beat",
     "users",
     "materials",
 ]
@@ -166,5 +178,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "users.User"
 
-STRIPE_PUBLIC_KEY = "pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF"
+STRIPE_PUBLIC_KEY = (
+    "pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

@@ -11,6 +11,7 @@ from .models import Course, Lesson, Payment, Subscription
 from .paginators import CoursePaginator, LessonPaginator
 from .permissions import IsModerator, IsOwner
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
+from .tasks import send_course_update_notification
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -38,6 +39,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
+
+    def perform_update(self, serializer):
+        """При обновлении курса запускаем рассылку"""
+        instance = serializer.save()
+        send_course_update_notification.delay(instance.id)
+        return instance
 
     @action(detail=True, methods=["post"])
     def subscribe(self, request, pk=None):
