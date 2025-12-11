@@ -98,3 +98,13 @@ celery -A config beat --loglevel=info
 celery -A config worker --beat --loglevel=info
 ```
 
+### Запуск Docker
+```bash
+docker-compose up --build
+```
+
+### Остановка Docker
+```bash
+docker-compose down
+```
+  
