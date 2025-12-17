@@ -1,5 +1,8 @@
 # Программа для онлайн обучения YO
 
+## Деплой проекта
+Проект развернут на Render: https://lmsystemyo-1.onrender.com
+
 ## Функционал
 
 ### Модели:
@@ -107,4 +110,3 @@ docker-compose up --build
 ```bash
 docker-compose down
 ```
-  
