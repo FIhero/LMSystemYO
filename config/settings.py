@@ -34,7 +34,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ['lmsystemyo-1.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["lmsystemyo-1.onrender.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -92,7 +92,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -174,14 +174,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "users.User"
 
-STRIPE_PUBLIC_KEY = (
-    "pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF")
+STRIPE_PUBLIC_KEY = "pk_test_51SY7DfCk7nDJfQvIRW84NkTkfdv9uBmry6l8grzgnX8MNeJwrmrT7u8fp7zAIZby6IVfoO6alYniLU1krnFumpQi00EEjcZmcF"
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
