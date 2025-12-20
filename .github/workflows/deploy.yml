@@ -53,19 +53,51 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
-        run: |
-          echo "Отправка запроса на деплой в Render..."
-          RESPONSE=$(curl -f -s -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -w "HTTP-статус: %{http_code}") || {
-            echo "❌ ОШИБКА: Запрос к Render API не удался"
-            echo "Вывод: $RESPONSE"
-            exit 1
-          }
-          echo "✅ $RESPONSE"
-          echo "Render начал процесс деплоя."
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo apt-get update
+            sudo apt-get install -y python3-pip python3-venv git
+
+            cd /home/developer
+            mkdir -p app
+            cd app
+
+            if [ -d ".git" ]; then
+              echo "Обновляем существующий репозиторий..."
+              git pull origin main
+            else
+              echo "Клонируем репозиторий впервые..."
+              git clone https://github.com/FIhero/LMSystemYO.git .
+            fi
+
+            python3 -m venv venv
+            source venv/bin/activate
+
+            pip install --upgrade pip
+            pip install -r requirements.txt
+
+            if [ -f ".env.example" ]; then
+              if [ ! -f ".env" ]; then
+                cp .env.example .env
+                echo "⚠️ ВНИМАНИЕ: Создан файл .env из шаблона. Нужно заполнить реальными значениями!"
+              fi
+            fi
+
+            python manage.py migrate --noinput
+
+            python manage.py collectstatic --noinput || true
+
+            echo "Запускаем Django сервер на порту 8000..."
+            nohup python manage.py runserver 0.0.0.0:8000 > django.log 2>&1 &
+
+            sleep 3
+            if curl -s http://localhost:8000 > /dev/null; then
+              echo "✅ Деплой успешно завершен!"
+            else
+              echo "⚠️ Сервер не отвечает. Проверьте логи: cat /home/developer/app/django.log"
+            fi
