@@ -1,0 +1,103 @@
+name: Test and Deploy
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Django tests
+      run: |
+        python manage.py test --noinput
+
+    - name: Test passed
+      run: echo "Все тесты прошли успешно!"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo apt-get update
+            sudo apt-get install -y python3-pip python3-venv git
+
+            cd /home/developer
+            mkdir -p app
+            cd app
+
+            if [ -d ".git" ]; then
+              echo "Обновляем существующий репозиторий..."
+              git pull origin main
+            else
+              echo "Клонируем репозиторий впервые..."
+              git clone https://github.com/FIhero/LMSystemYO.git .
+            fi
+
+            python3 -m venv venv
+            source venv/bin/activate
+
+            pip install --upgrade pip
+            pip install -r requirements.txt
+
+            if [ -f ".env.example" ]; then
+              if [ ! -f ".env" ]; then
+                cp .env.example .env
+                echo "⚠️ ВНИМАНИЕ: Создан файл .env из шаблона. Нужно заполнить реальными значениями!"
+              fi
+            fi
+
+            python manage.py migrate --noinput
+
+            python manage.py collectstatic --noinput || true
+
+            echo "Запускаем Django сервер на порту 8000..."
+            nohup python manage.py runserver 0.0.0.0:8000 > django.log 2>&1 &
+
+            sleep 3
+            if curl -s http://localhost:8000 > /dev/null; then
+              echo "✅ Деплой успешно завершен!"
+            else
+              echo "⚠️ Сервер не отвечает. Проверьте логи: cat /home/developer/app/django.log"
+            fi
